@@ -1,24 +1,58 @@
 import sqlalchemy
 import pymysql
 import sqlalchemy as db
+import pandas as pd
 
 db_engine = db.create_engine("mysql+pymysql://root:password@localhost/MySQL")
 
-def print_table(table_name):
-    print("sqlalchemy: {}".format(sqlalchemy.__version__))
-    meta_data = db.MetaData()
+def load_table(table_name):
 
+    table = db.Table(table_name, db.MetaData(), autoload_with=db_engine)
+    select_statement = db.select(table)
     # connect to database and get the table
     with db_engine.connect() as connection:
-        table = db.Table(table_name, meta_data, autoload_with=db_engine)
-        select_statement = db.select(table)
-    	
-        # get all data and print each row
-        result = connection.execute(select_statement).fetchall() 
-        for row in result:
-            print(row)
+        result = connection.execute(select_statement)
+        
+        # Fetch all results into a list of tuples
+        rows = result.fetchall()
+        
+        # Optional: Get the column names from the table
+        column_names = table.columns.keys()
+        
+        # Convert to a Pandas DataFrame
+        df = pd.DataFrame(rows, columns=column_names)
+        
+        # Return the DataFrame
+        return df
 
-def insert_train_db(x, y1, y2, y3, y4):
+def csv_2DArray(directory):
+    # reading csv file 
+    df = pd.read_csv(directory)
+
+    return df
+
+
+def load_trainCSV(directory):
+    train_df = csv_2DArray(directory)
+    for ind in train_df.index:
+        trainDB_add_record(train_df['x'][ind], train_df['y1'][ind], train_df['y2'][ind], train_df['y3'][ind], train_df['y4'][ind])
+    
+def load_idealCSV(directory):
+    ideal_df = csv_2DArray(directory)
+    
+    for ind in ideal_df.index:
+        x_value = ideal_df['x'][ind]
+        y_values = ideal_df.loc[ind, 'y1':'y50'].values
+        idealDB_add_record(x_value, y_values)
+
+def load_testCSV(directory):
+    train_df = csv_2DArray(directory)
+    for ind in train_df.index:
+        trainDB_add_record(train_df['x'][ind], train_df['y'][ind], 0.0, 0.0)
+    
+
+
+def trainDB_add_record(x, y1, y2, y3, y4):
     connection = db_engine.connect()
     try:
         # creation SQL statement with placeholder
@@ -51,7 +85,7 @@ def insert_train_db(x, y1, y2, y3, y4):
     finally:
         connection.close()
 
-def insert_ideal_db(x, y_values):
+def idealDB_add_record(x, y_values):
     connection = db_engine.connect()
     try:
         # create column name string for SQL statement
@@ -83,7 +117,7 @@ def insert_ideal_db(x, y_values):
     finally:
         connection.close()
 
-def insert_test_db(x_test, y_test, delta_y_test, no_ideal_func):
+def testDB_add_record(x_test, y_test, delta_y_test, no_ideal_func):
     connection = db_engine.connect()
     try:
         # creation of SQL statement with placeholder
@@ -114,7 +148,6 @@ def insert_test_db(x_test, y_test, delta_y_test, no_ideal_func):
     
     finally:
         connection.close()
-
 
 
 def createDatabase():
