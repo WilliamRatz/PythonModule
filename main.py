@@ -1,5 +1,4 @@
 import src.sql_manager as sql_mgm
-import src.csv_manager as csv_mgm
 import numpy as np
 
 sql_mgm.createDatabase()
