@@ -46,9 +46,9 @@ def load_idealCSV(directory):
         idealDB_add_record(x_value, y_values)
 
 def load_testCSV(directory):
-    train_df = csv_2DArray(directory)
-    for ind in train_df.index:
-        trainDB_add_record(train_df['x'][ind], train_df['y'][ind], 0.0, 0.0)
+    test_df = csv_2DArray(directory)
+    for ind in test_df.index:
+        trainDB_add_record(test_df['x'][ind], test_df['y'][ind], 0.0, 0.0)
     
 
 
