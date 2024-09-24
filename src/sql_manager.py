@@ -3,7 +3,17 @@ import pymysql
 import sqlalchemy as db
 import pandas as pd
 
-db_engine = db.create_engine("mysql+pymysql://root:password@localhost/MySQL")
+#db_engine = db.create_engine('sqlite:///E:\\Coding\\Python Modul\\data.db', echo=True)
+
+import os
+
+db_path = 'data\\data.db'
+
+# Ensure the directory exists
+os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
+db_engine = db.create_engine(f'sqlite:///{db_path}', echo=False)
+
 
 def load_table(table_name):
 
@@ -44,12 +54,6 @@ def load_idealCSV(directory):
         x_value = ideal_df['x'][ind]
         y_values = ideal_df.loc[ind, 'y1':'y50'].values
         idealDB_add_record(x_value, y_values)
-
-def load_testCSV(directory):
-    test_df = csv_2DArray(directory)
-    for ind in test_df.index:
-        trainDB_add_record(test_df['x'][ind], test_df['y'][ind], 0.0, 0.0)
-    
 
 
 def trainDB_add_record(x, y1, y2, y3, y4):
@@ -186,7 +190,8 @@ def createDatabase():
         test_db = db.Table(
             'test_db',
             meta_data,
-            db.Column('X (test func)', db.DOUBLE_PRECISION, primary_key=True, autoincrement=False, nullable=True),
+            db.Column('Primary Key', db.DOUBLE_PRECISION, primary_key=True, autoincrement=True, nullable=True),
+            db.Column('X (test func)', db.DOUBLE_PRECISION),
             db.Column('Y (test func)', db.DOUBLE_PRECISION),
             db.Column('Delta Y (test func)', db.DOUBLE_PRECISION),
             db.Column('No. of ideal func', db.DOUBLE_PRECISION)
