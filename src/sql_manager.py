@@ -1,12 +1,22 @@
-import pymysql
 import sqlalchemy as db
 import pandas as pd
 
 class DatabaseManager:
     def __init__(self, db_path):
+        '''
+        creats/loads database engine\n
+        db_path: path to the database\n
+        return: none
+        '''
+        # create engine so it can be used in the whole class
         self.db_engine = db.create_engine(f'sqlite:///{db_path}')
 
     def load_table(self, table_name):
+        '''
+        loads table into a pandas data frame\n
+        table_name: name of the table to load\n
+        return: panda data frame of table
+        '''
 
         table = db.Table(table_name, db.MetaData(), autoload_with=self.db_engine)
         select_statement = db.select(table)
@@ -14,38 +24,70 @@ class DatabaseManager:
         with self.db_engine.connect() as connection:
             result = connection.execute(select_statement)
 
-            # Fetch all results into a list of tuples
+            # fetch all results into a list of tuples
             rows = result.fetchall()
 
-            # Optional: Get the column names from the table
+            # convert table into a dataframe
             column_names = table.columns.keys()
-
-            # Convert to a Pandas DataFrame
             df = pd.DataFrame(rows, columns=column_names)
 
-            # Return the DataFrame
             return df
 
     def csv_2DArray(self, directory):
-        # reading csv file 
+        '''
+        read csv file into a pandas data frame\n
+        directory: directory of csv file\n
+        return: panda data frame of csv file
+        '''
         return pd.read_csv(directory)
 
-
-    def load_trainCSV(self, directory):
+    def import_trainCSV(self, directory):
+        '''
+        import the train data from the train.csv 
+        into the database\n
+        directory: directory of csv file\n
+        return: size of successfull added records
+        '''
+        counter = 0
         train_df = self.csv_2DArray(directory)
         for ind in train_df.index:
-            self.trainDB_add_record(train_df['x'][ind], train_df['y1'][ind], train_df['y2'][ind], train_df['y3'][ind], train_df['y4'][ind])
+            if self.trainDB_add_record(train_df['x'][ind], train_df['y1'][ind], train_df['y2'][ind], train_df['y3'][ind], train_df['y4'][ind]): 
+                counter += 1
+        
+        # return the amount of records that has been added
+        return counter
 
-    def load_idealCSV(self, directory):
+    def import_idealCSV(self, directory):
+        '''
+        import the ideal data from the ideal.csv\n 
+        into the database\n
+        directory: directory of csv file\n
+        return: size of successfull added records
+        '''
+        counter = 0
         ideal_df = self.csv_2DArray(directory)
-
         for ind in ideal_df.index:
             x_value = ideal_df['x'][ind]
             y_values = ideal_df.loc[ind, 'y1':'y50'].values
-            self.idealDB_add_record(x_value, y_values)
+            # on success increase the counter by one
+            if self.idealDB_add_record(x_value, y_values): 
+                counter += 1
+        
+        # return the amount of records that has been added
+        return counter
 
 
     def trainDB_add_record(self, x, y1, y2, y3, y4):
+        '''
+        add a record to the train table in the database\n
+        x: X value\n
+        y1: Y1 (training func) value\n
+        y2: Y2 (training func) value\n
+        y3: Y3 (training func) value\n
+        y4: Y4 (training func) value\n
+        directory: directory of csv file\n
+        return: BOOL if successfull
+        '''
         connection = self.db_engine.connect()
         try:
             # creation SQL statement with placeholder
@@ -67,7 +109,6 @@ class DatabaseManager:
             # execute SQL statement
             connection.execute(sql, params)
             connection.commit()
-
             return True
 
         except Exception as e:
@@ -76,9 +117,19 @@ class DatabaseManager:
             return False
 
         finally:
+            # close connection
             connection.close()
 
+       
+        
     def idealDB_add_record(self, x, y_values):
+        '''
+        add a record to the train table in the database\n
+        x: X value\n
+        y_values: array containing all y indexes from 1 to 50\n
+        directory: directory of csv file\n
+        return: BOOL if successfull
+        '''
         connection = self.db_engine.connect()
         try:
             # create column name string for SQL statement
@@ -99,7 +150,6 @@ class DatabaseManager:
             # execute SQL statement
             connection.execute(db.text(sql), params)
             connection.commit()
-
             return True
 
         except Exception as e:
@@ -108,9 +158,19 @@ class DatabaseManager:
             return False
 
         finally:
+            # close connections
             connection.close()
 
+    
     def testDB_add_record(self, x_test, y_test, delta_y_test, no_ideal_func):
+        '''
+        add a record to the test table in the database\n
+        x_test: X value\n
+        y_test: Y (test func) value\n
+        delta_y_test: Delta Y (test func) value\n
+        no_ideal_func: No. of ideal func value\n
+        return: BOOL if successfull
+        '''
         connection = self.db_engine.connect()
         try:
             # creation of SQL statement with placeholder
@@ -131,7 +191,6 @@ class DatabaseManager:
             # execute SQL statement
             connection.execute(sql, params)
             connection.commit()
-
             return True
 
         except Exception as e:
@@ -140,10 +199,16 @@ class DatabaseManager:
             return False
 
         finally:
+            # close connections
             connection.close()
-
+    
 
     def createDatabase(self):
+        '''
+        creates all needed database tabels at the choosen direction
+        if not already exist\n
+        return: BOOL if successfull
+        '''
         # get connection object
         connection = self.db_engine.connect()
 
@@ -155,7 +220,8 @@ class DatabaseManager:
             y_columns = [
                 db.Column(f'Y{i} (training func)', db.DOUBLE_PRECISION) for i in range(1, 5)
             ]
-
+            
+            # combine the X coulumn with the Y1 to Y4 columns
             train_db = db.Table(
                 'train_db',
                 meta_data,
@@ -168,6 +234,7 @@ class DatabaseManager:
                 db.Column(f'Y{i} (ideal func)', db.DOUBLE_PRECISION) for i in range(1, 51)
             ]
 
+            # combine the X coulumn with the Y1 to Y50 columns
             ideal_db = db.Table(
                 'ideal_db',
                 meta_data,
