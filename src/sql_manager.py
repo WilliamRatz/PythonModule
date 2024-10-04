@@ -7,7 +7,6 @@ class DatabaseManager:
         Creats/Loads database engine
 
         :param db_path: path to the database
-        :return: none
         '''
         # Create engine so it can be used in the whole class
         self.db_engine = db.create_engine(f'sqlite:///{db_path}')
