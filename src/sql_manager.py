@@ -43,7 +43,7 @@ class DatabaseManager:
 
     def import_trainCSV(self, directory):
         '''
-        import the train data from the train.csv 
+        import the train data from the train.csv\n
         into the database\n
         directory: directory of csv file\n
         return: size of successfull added records
@@ -205,7 +205,7 @@ class DatabaseManager:
 
     def createDatabase(self):
         '''
-        creates all needed database tabels at the choosen direction
+        creates all needed database tabels at the choosen direction\n
         if not already exist\n
         return: BOOL if successfull
         '''
