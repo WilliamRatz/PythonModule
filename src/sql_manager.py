@@ -1,20 +1,29 @@
 import sqlalchemy as db
 import pandas as pd
+from src.base_manager import BaseManager 
 
-class DatabaseManager:
+class DatabaseManager(BaseManager):
 
     def __init__(self, db_path):
         '''
-        Creats/Loads database engine
+        Creats/Loads database engine.
 
         :param db_path: path to the database
         '''
-        # Create engine so it can be used in the whole class
+        # Initialize parent class.
+        super().__init__()
+        # Create engine so it can be used in the whole class.
         self.db_engine = db.create_engine(f'sqlite:///{db_path}')
+
+    def __del__(self):
+        '''Close all open connections to the database.'''
+        self.db_engine.dispose()
+        # Change the status to "DISCONNECTED".
+        self.set_status("DISCONNECTED")
 
     def load_table(self, table_name):
         '''
-        Loads table into a pandas data frame
+        Loads table into a pandas data frame.
 
         :param table_name: name of the table to load
         :return: panda data frame of table
@@ -25,14 +34,14 @@ class DatabaseManager:
                          autoload_with=self.db_engine)
         
         select_statement = db.select(table)
-        # Connect to database and get the table
+        # Connect to database and get the table.
         with self.db_engine.connect() as connection:
             result = connection.execute(select_statement)
 
-            # Fetch all results into a list of tuples
+            # Fetch all results into a list of tuples.
             rows = result.fetchall()
 
-            # Convert table into a dataframe
+            # Convert the table into a dataframe.
             column_names = table.columns.keys()
             df = pd.DataFrame(rows, columns=column_names)
 
@@ -40,7 +49,7 @@ class DatabaseManager:
 
     def csv_2DArray(self, directory):
         '''
-        Read csv file into a pandas data frame
+        Read csv file into a pandas data frame.
 
         :param directory: directory of csv file
         :return: panda data frame of csv file
@@ -49,7 +58,7 @@ class DatabaseManager:
 
     def import_trainCSV(self, directory):
         '''
-        Import the train data from the train.csv into the database
+        Import the train data from the train.csv into the database.
         
         :param directory: directory of csv file
         :return: size of successfull added records
@@ -64,12 +73,12 @@ class DatabaseManager:
                                        train_df['y4'][ind]): 
                 counter += 1
         
-        # Return the amount of records that has been added
+        # Return the amount of records that has been added.
         return counter
 
     def import_idealCSV(self, directory):
         '''
-        Import the ideal data from the ideal.csv into the database
+        Import the ideal data from the ideal.csv into the database.
 
         :param directory: directory of csv file
         :return: size of successfull added records
@@ -79,16 +88,16 @@ class DatabaseManager:
         for ind in ideal_df.index:
             x_value = ideal_df['x'][ind]
             y_values = ideal_df.loc[ind, 'y1':'y50'].values
-            # on success increase the counter by one
+            # On success increase the counter by one.
             if self.idealDB_add_record(x_value, y_values): 
                 counter += 1
         
-        # Return the amount of records that has been added
+        # Return the amount of records that has been added.
         return counter
 
     def trainDB_add_record(self, x, y1, y2, y3, y4):
         '''
-        Add a record to the train table in the database
+        Add a record to the train table in the database.
 
         :param x: X value
         :param y1: Y1 (training func) value
@@ -100,7 +109,7 @@ class DatabaseManager:
         '''
         connection = self.db_engine.connect()
         try:
-            # Creation SQL statement with placeholder
+            # Creation SQL statement with placeholder.
             sql = db.text("""
                 INSERT INTO train_db 
                 (`X`, 
@@ -111,7 +120,7 @@ class DatabaseManager:
                 VALUES (:x, :y1, :y2, :y3, :y4)
             """)
 
-            # Parameter with input data
+            # Parameter with input data.
             params = {
                 'x': x,
                 'y1': y1,
@@ -120,7 +129,7 @@ class DatabaseManager:
                 'y4': y4
             }
 
-            # Execute SQL statement
+            # Execute the SQL statement.
             connection.execute(sql, params)
             connection.commit()
             return True
@@ -128,21 +137,21 @@ class DatabaseManager:
         except Exception as e:
             if ("Duplicate entry" in str(e) 
             or "UNIQUE constraint failed" in str(e)):
-                print(f"Record with X={x} already exists in " 
+                self.log(f"Record with X={x} already exists in " 
                       "train_db, skipping insert.")
             else:
-                print(f"Error while INSERT operation in train_db: {e}")
+                self.log(f"Error while INSERT operation in train_db: {e}")
             
             connection.rollback()
             return False
 
         finally:
-            # Close connection
+            # Close the connection.
             connection.close()
    
     def idealDB_add_record(self, x, y_values):
         '''
-        Add a record to the train table in the database
+        Add a record to the train table in the database.
 
         :param x: X value
         :param y_values: array containing all y indexes from 1 to 50
@@ -151,25 +160,25 @@ class DatabaseManager:
         '''
         connection = self.db_engine.connect()
         try:
-            # Create column name string for SQL statement
+            # Create a column name string for the SQL statement.
             columns = ['`X`'] + [f'`Y{i} (ideal func)`' for i in range(1, 51)]
             column_string = ', '.join(columns)
 
-            # Create value placeholder
+            # Create a value placeholder.
             value_placeholders = [':x'] + [f':y{i}' for i in range(1, 51)]
             value_string = ', '.join(value_placeholders)
 
-            # Creation of SQL statement with placeholder
+            # Creation of SQL statement with placeholder.
             sql = f"""
                         INSERT INTO ideal_db ({column_string}) 
                         VALUES ({value_string})
                    """
 
-            # Parameter with input data
+            # Parameter with input data.
             params = {'x': x}
             params.update({f'y{i+1}': y for i, y in enumerate(y_values)})
 
-            # Execute SQL statement
+            # Execute the SQL statement.
             connection.execute(db.text(sql), params)
             connection.commit()
             return True
@@ -177,21 +186,21 @@ class DatabaseManager:
         except Exception as e:
             if ("Duplicate entry" in str(e) 
             or "UNIQUE constraint failed" in str(e)):
-                print(f"Record with X={x} already exists in " 
+                self.log(f"Record with X={x} already exists in " 
                        "ideal_db, skipping insert.")
             else:
-                print(f"Error while INSERT operation in ideal_db: {e}")
+                self.log(f"Error while INSERT operation in ideal_db: {e}")
             
             connection.rollback()
             return False
 
         finally:
-            # Close connections
+            # Close the connections.
             connection.close()
 
     def testDB_add_record(self, x_test, y_test, delta_y_test, no_ideal_func):
         '''
-        Add a record to the test table in the database
+        Add a record to the test table in the database.
 
         :param x_test: X value
         :param y_test: Y (test func) value
@@ -201,7 +210,7 @@ class DatabaseManager:
         '''
         connection = self.db_engine.connect()
         try:
-            # Creation of SQL statement with placeholder
+            # Creation of SQL statement with a placeholder.
             sql = db.text("""
                 INSERT INTO test_db 
                 (`X (test func)`, 
@@ -211,7 +220,7 @@ class DatabaseManager:
                 VALUES (:x_test, :y_test, :delta_y_test, :no_ideal_func)
             """)
 
-            # Parameter with input data
+            # Parameter with the input data.
             params = {
                 'x_test': x_test,
                 'y_test': y_test,
@@ -219,7 +228,7 @@ class DatabaseManager:
                 'no_ideal_func': no_ideal_func
             }
 
-            # Execute SQL statement
+            # Execute the SQL statement.
             connection.execute(sql, params)
             connection.commit()
             return True
@@ -227,39 +236,42 @@ class DatabaseManager:
         except Exception as e:
             if ("Duplicate entry" in str(e) 
             or "UNIQUE constraint failed" in str(e)):
-                print(f"Record with X={x_test} and Y={y_test} "
+                self.log(f"Record with X={x_test} and Y={y_test} "
                        "already exists in test_db, skipping insert.")
             else:
-                print(f"Error while INSERT operation in test_db: {e}")
+                self.log(f"Error while INSERT operation in test_db: {e}")
             
             connection.rollback()
             return False
 
         finally:
-            # Close connections
+            # Close the connections.
             connection.close()
     
     def createDatabase(self):
         '''
         Creates all needed database tabels at the 
-        choosen direction, if not already exist
+        choosen direction, if not already exist.
 
         :return: true if successfull
         '''
-        # Get connection object
+        # Get the connection object.
         connection = self.db_engine.connect()
 
+        # Change the status to "CONNECTED".
+        self.set_status("CONNECTED")
+
         try:
-            # Get meta data object
+            # Get meta data object.
             meta_data = db.MetaData()
 
-            # Create train_db table Y1-Y4
+            # Create train_db table Y1-Y4.
             y_columns = [
                 db.Column(f'Y{i} (training func)',
                           db.DOUBLE_PRECISION) for i in range(1, 5)
             ]
             
-            # Combine the X coulumn with the Y1 to Y4 columns
+            # Combine the X coulumn with the Y1 to Y4 columns.
             train_db = db.Table(
                 'train_db',
                 meta_data,
@@ -270,13 +282,13 @@ class DatabaseManager:
                 *y_columns,
             )
 
-            # Create ideal_db table Y1-Y50
+            # Create ideal_db table Y1-Y50.
             y_columns = [
                 db.Column(f'Y{i} (ideal func)', 
                           db.DOUBLE_PRECISION) for i in range(1, 51)
             ]
 
-            # Combine the X coulumn with the Y1 to Y50 columns
+            # Combine the X coulumn with the Y1 to Y50 columns.
             ideal_db = db.Table(
                 'ideal_db',
                 meta_data,
@@ -288,7 +300,7 @@ class DatabaseManager:
                 *y_columns,
             )
 
-            # Create test_db table
+            # Create the test_db table.
             test_db = db.Table(
                 'test_db',
                 meta_data,
@@ -308,21 +320,27 @@ class DatabaseManager:
                           db.DOUBLE_PRECISION)
             )
 
-            # Create train_db table and stores the information in metadata
+            # Create train_db table and stores the information in the metadata.
             meta_data.create_all(self.db_engine)
 
-            # On success return True
+            # On success return True.
             return True
 
         except db.exc.IntegrityError as e:
-            print(f"IntegrityError while creating database: {e}")
+            # Change the status to "ERROR".
+            self.set_status("ERROR")
+            self.log(f"IntegrityError while creating database: {e}")
             connection.rollback()
             return False
         except Exception as e:
-            print(f"Unexpected error while creating database: {e}")
+            # Change the status to "ERROR".
+            self.set_status("ERROR")
+            self.log(f"Unexpected error while creating database: {e}")
             connection.rollback()
             return False
 
         finally:
-            # Close connection
+            # Close the connection.
             connection.close()
+            # Change the status to "INITIALIZED".
+            self.set_status("INITIALIZED")
