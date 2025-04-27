@@ -145,7 +145,7 @@ class VisualManger:
         for index in range(len(array_xy)-1):
             plt.scatter([pair[0] for pair in array_xy[index]], 
                         [pair[1] for pair in array_xy[index]], 
-                        color= self.darken_color(function_colors[index],0.95), 
+                        color= self.darken_color(function_colors[index],0.90), 
                         label='Matched Test Data', 
                         s=30)
         
