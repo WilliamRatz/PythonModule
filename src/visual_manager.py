@@ -2,27 +2,36 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from src.base_manager import BaseManager 
 
-class VisualManger:
+
+class VisualManger(BaseManager):
 
     def __init__(self, df_train, df_ideal, df_test):
         """
-        Saves localy need data fields
+        Saves localy need data fields.
 
         :param df_train: train data
         :param df_ideal: ideal data
         :param df_test: test data
         """
+        # Initialize the parent class.
+        super().__init__()
+        
+        # Initialize the VisualManger data.
         self.dataFrame_train = df_train
         self.dataFrame_ideal = df_ideal
         self.dataFrame_test = df_test
+
+        # Change the status to "INITIALIZED".
+        self.set_status("INITIALIZED")
 
     def visualize_data_and_deviations(self, func_x_max_dev:pd.DataFrame, 
                                       function_colors):
         """
         Visualisation of the chosen and unchosen functions, all train data, 
         all deviation zones and test data with its matched function color 
-        (if it matched)
+        (if it matched).
 
         :param func_x_max_dev: the chosen functions matched with there 
          individual deviation
@@ -30,19 +39,22 @@ class VisualManger:
          unmatchend test data and unchosen functions
         """
 
-        # Plot aspect ratio
+        # Change the status to "PLOT_GENERATION ".
+        self.set_status("PLOT_GENERATION")
+
+        # Plot the aspect ratio.
         plt.figure(figsize=(15, 10))
     
-        # Plot ideal functions
+        # Plot the ideal functions.
         self._plot_ideal_functions(func_x_max_dev, function_colors)
     
-        # Plot training data
+        # Plot the training data.
         self._plot_training_data()
     
-        # Plot test data
+        # Plot the test data.
         self._plot_test_data(func_x_max_dev['func_id'], function_colors)
     
-        # Visualize everything
+        # Visualize everything.
         plt.xlabel('X')
         plt.ylabel('Y')
         plt.title('Data Visualization with Deviations')
@@ -53,23 +65,26 @@ class VisualManger:
         plt.tight_layout()
         plt.show()
 
+        # Change the status to "IDLE".
+        self.set_status("IDLE")
+
     def darken_color(self, hex_color, factor):
         """
         Darken the color by muliplying it with a factor less than 1 (could 
-        also be used to enlight the color with a multiplier higher than 1)
+        also be used to enlight the color with a multiplier higher than 1).
 
         :param hex_color: the color to manipulate
         :param factor: multiplier
         :return: darker color
         """
 
-        # Convert hex to rgb
+        # Convert hex to rgb.
         rgb = mcolors.hex2color(hex_color)
         
-        # Darken rgb by multiplying with factor
+        # Darken rgb by multiplying with factor.
         darkened_rgb = tuple([channel * factor for channel in rgb])
         
-        # Convert hex back to rgb
+        # Convert hex back to rgb.
         darkened_hex = mcolors.to_hex(darkened_rgb)
         
         return darkened_hex
@@ -78,32 +93,34 @@ class VisualManger:
                                            function_color, text):
         """
         Plotting a function by x and y coordinates + a vertical deviation area 
-        around it set by max_deviation
+        around it set by max_deviation.
 
         :param x: x values of the function
         :param y: y values of the function
-        :param max_deviation: size of deviation area around the function (vertical)
-        :param function_color: display color of the function and its deviation area
+        :param max_deviation: size of deviation area 
+         around the function (vertical)
+        :param function_color: display color of the 
+         function and its deviation area
         :param text: text for the legend
         """
-        # Plot the function line
+        # Plot the function line.
         plt.plot(x, y, label=text, color=function_color, linewidth=2)
         
-        # Create upper and lower bounds with vertical deviation
+        # Create upper and lower bounds with vertical deviation.
         y_upper = y + max_deviation
         y_lower = y - max_deviation
         
-        # Fill between upper and lower bounds
+        # Fill between upper and lower bounds.
         plt.fill_between(x, y_lower, y_upper, color=function_color, alpha=0.4)
     
     def _plot_training_data(self):
         """
-        Scatters all the trainings data in gray and low alpha
+        Scatters all the trainings data in gray and low alpha.
         """
-        # Boolean helper variable to only print the label one time
+        # Boolean helper variable to only print the label one time.
         label_printed = False
-        # Go though the whole dataFrame_train and scatter each dot in gray 
-        # Assuming first column is 'X'
+        # Go though the whole dataFrame_train and scatter each dot in gray. 
+        # Assuming first column is 'X'.
         for col in self.dataFrame_train.columns[1:]:  
             if label_printed == True:
                 plt.scatter(self.dataFrame_train['X'], 
@@ -118,7 +135,7 @@ class VisualManger:
     def _plot_test_data(self, chosen_functions, function_colors):
         """
         Scatter the matched and unmatched test data from the chosen 
-        functions, unmatched test data will be displayed in gray
+        functions, unmatched test data will be displayed in gray.
 
         :param chosen_functions: the chosen function from the ideal 
          function data set in order of the function_colors param
@@ -126,14 +143,14 @@ class VisualManger:
          chosen_function param
         """
 
-        # 5 lists for (x, y) pairs
+        # Create 5 lists for (x, y) pairs.
         array_xy = [[] for _ in range(len(chosen_functions)+1)]  
     
         for _, row in self.dataFrame_test.iterrows():
             x, y = row['X (test func)'], row['Y (test func)']
             function_num = row['No. of ideal func']
             
-            # Filter for chosen and unchosen test data
+            # Filter for chosen and unchosen test data.
             if pd.notna(function_num):
                 if function_num in chosen_functions.values:
                     index = chosen_functions[chosen_functions == function_num].index[0]
@@ -141,7 +158,7 @@ class VisualManger:
             else:
                 array_xy[-1].append((x,y))  
                 
-        # Scatter matched test data
+        # Scatter the matched test data.
         for index in range(len(array_xy)-1):
             plt.scatter([pair[0] for pair in array_xy[index]], 
                         [pair[1] for pair in array_xy[index]], 
@@ -149,7 +166,7 @@ class VisualManger:
                         label='Matched Test Data', 
                         s=30)
         
-        # Scatter unmatched test data
+        # Scatter the unmatched test data.
         plt.scatter([pair[0] for pair in array_xy[len(array_xy)-1]], 
                     [pair[1] for pair in array_xy[len(array_xy)-1]], 
                     color='gray', 
@@ -160,26 +177,26 @@ class VisualManger:
                               function_colors):
         """
         Scatter the matched and unmatched test data from the chosen 
-        functions, unmatched test data will be displayed in gray
+        functions, unmatched test data will be displayed in gray.
 
         :param func_x_max_dev: the chosen functions matched with there 
          individual deviation
         :param function_colors: the function colors in order of the 
          chosen function from func_x_max_dev param
         """
-        # Plot ideal functions
+        # Plot the ideal functions.
         x = self.dataFrame_ideal['X']
-        # Start from column index 1
+        # Start from column index 1.
         for i in range(1, len(self.dataFrame_ideal.columns)):  
             y = self.dataFrame_ideal.iloc[:, i]
             
-            # Find the chosen functions
+            # Find the chosen functions.
             if i in func_x_max_dev['func_id'].values:
                 index = func_x_max_dev[func_x_max_dev['func_id'] == i].index[0]
                 self._plot_function_with_derivativ_area(x,y,
                                 func_x_max_dev['max_div'].at[index], 
                                 function_colors[index], 
                                 f'Chosen function {i}')
-            # Unchosen function are displayed in gray
+            # Unchosen function are displayed in gray.
             else:
                 plt.plot(x, y, color='gray', linewidth=1, alpha=0.2)
