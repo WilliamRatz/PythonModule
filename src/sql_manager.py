@@ -2,6 +2,7 @@ import sqlalchemy as db
 import pandas as pd
 
 class DatabaseManager:
+
     def __init__(self, db_path):
         '''
         Creats/Loads database engine
@@ -85,7 +86,6 @@ class DatabaseManager:
         # Return the amount of records that has been added
         return counter
 
-
     def trainDB_add_record(self, x, y1, y2, y3, y4):
         '''
         Add a record to the train table in the database
@@ -139,9 +139,7 @@ class DatabaseManager:
         finally:
             # Close connection
             connection.close()
-
-       
-        
+   
     def idealDB_add_record(self, x, y_values):
         '''
         Add a record to the train table in the database
@@ -191,7 +189,6 @@ class DatabaseManager:
             # Close connections
             connection.close()
 
-    
     def testDB_add_record(self, x_test, y_test, delta_y_test, no_ideal_func):
         '''
         Add a record to the test table in the database
@@ -242,7 +239,6 @@ class DatabaseManager:
             # Close connections
             connection.close()
     
-
     def createDatabase(self):
         '''
         Creates all needed database tabels at the 

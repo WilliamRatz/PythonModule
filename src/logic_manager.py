@@ -3,6 +3,7 @@ import numpy as np
 from scipy.spatial.distance import cdist
 
 class LogicManager:
+
     def __init__(self) -> None:
         pass
 
@@ -15,23 +16,30 @@ class LogicManager:
         :param xy_all_ideal_func: all possible ideal functions
         :return: index of best fitting function
         '''
+        # Check for empty data
+        if xy_train_func.empty or xy_all_ideal_func.empty:
+            raise ValueError("Input DataFrames cannot be empty")
+        
+        # Verify required columns exist
+        if len(xy_train_func.columns) < 2 or len(xy_all_ideal_func.columns) < 2:
+            raise ValueError("DataFrames must contain at least X and Y columns")
+        
         # Ensure x values match
-        if not np.array_equal(xy_train_func.iloc[:, 0], 
-                              xy_all_ideal_func.iloc[:, 0]):
-            raise ValueError("X values in training and " 
-            "ideal datasets do not match")
+        if not np.array_equal(xy_train_func.iloc[:, 0].values, 
+                            xy_all_ideal_func.iloc[:, 0].values):
+            raise ValueError("X values in training and ideal datasets do not match")
 
         y_train = xy_train_func.iloc[:, 1].values
-        best_function  = -1
-        smalest_deviation = float('inf')
-        for column in range(1, 51):
+        best_function = -1
+        smallest_deviation = float('inf')
+        
+        # Check each Y column (skip X column at index 0)
+        for column in range(1, len(xy_all_ideal_func.columns)):
             y_ideal = xy_all_ideal_func.iloc[:, column].values
-            # Least squares calculation
-            deviation = np.sum((y_train - y_ideal) ** 2)  
+            deviation = np.sum((y_train - y_ideal) ** 2)
 
-            # Update with better function if smaller diviations has been found
-            if deviation < smalest_deviation:
-                smalest_deviation = deviation
+            if deviation < smallest_deviation:
+                smallest_deviation = deviation
                 best_function = column
 
         return best_function
@@ -85,7 +93,6 @@ class LogicManager:
 
         # Deviation too large
         return None
-
 
     def find_best_function_test(self, x_value, y_value, 
                                 dataFrame_ideal:pd.DataFrame, 

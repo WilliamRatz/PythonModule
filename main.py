@@ -1,10 +1,33 @@
 import src.sql_manager as sql_mgr
 import src.logic_manager as lgc_mgr
 import src.visual_manager as v_mgr
+import src.unit_test_manager as ut_mgr
 import pandas as pd
 import numpy as np
 
+unit_testing = True
+
 def main():
+
+    # ---------------------------------UNIT TESTS---------------------------------- #
+    if unit_testing:
+        ut_manager = ut_mgr.UnitTestManager()
+        ut_results = ut_manager.perform_unit_tests()
+        tests_failed = False
+
+        # Print results
+        print("\nUnit Test Results:")
+        for name, passed in ut_results:
+            status = "✓ - PASS" if passed else "✗ - FAIL"
+            print(f"{status}: {name}")
+            if status == "✗":
+                tests_failed = True
+
+        if tests_failed:
+            print("\nAt least one unit tests failed, "
+                  "the program has been terminated")
+            return
+
     # -----------------------------------DATABSE----------------------------------- #
 
     # Create Database
