@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 
 unit_testing = True
+csv_location = "./data/"
 
 def main():
 
@@ -35,17 +36,17 @@ def main():
     db_manager.createDatabase()
 
     # Import ideal CSV into database
-    db_manager.import_idealCSV("./data/ideal.csv")
+    db_manager.import_idealCSV(csv_location + "ideal.csv")
 
     # Import train CSV into database
-    db_manager.import_trainCSV("./data/train.csv")
+    db_manager.import_trainCSV(csv_location + "train.csv")
 
     # Load (just created) train and ideal table
     dataFrame_ideal = db_manager.load_table("ideal_db")
     dataFrame_train = db_manager.load_table("train_db")
 
     # Load test CSV into pandas data frame
-    csv_test = db_manager.csv_2DArray("./data/test.csv")
+    csv_test = db_manager.csv_2DArray(csv_location + "test.csv")
 
 
     # -----------------------------------LOGIC----------------------------------- #
