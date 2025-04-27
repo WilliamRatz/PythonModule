@@ -6,7 +6,8 @@ class LogicManager:
     def __init__(self) -> None:
         pass
 
-    def get_best_fit_function(self, xy_train_func:pd.DataFrame, xy_all_ideal_func:pd.DataFrame):
+    def get_best_fit_function(self, xy_train_func:pd.DataFrame, 
+                              xy_all_ideal_func:pd.DataFrame):
         '''
         Find the best fitting ideal function for a train function
 
@@ -15,8 +16,10 @@ class LogicManager:
         :return: index of best fitting function
         '''
         # Ensure x values match
-        if not np.array_equal(xy_train_func.iloc[:, 0], xy_all_ideal_func.iloc[:, 0]):
-            raise ValueError("X values in training and ideal datasets do not match")
+        if not np.array_equal(xy_train_func.iloc[:, 0], 
+                              xy_all_ideal_func.iloc[:, 0]):
+            raise ValueError("X values in training and " 
+            "ideal datasets do not match")
 
         y_train = xy_train_func.iloc[:, 1].values
         best_function  = -1
@@ -33,58 +36,63 @@ class LogicManager:
 
         return best_function
 
-    def calculate_max_deviation(self, xy_train: np.array, xy_ideal: np.array) -> float:
+    def calculate_max_deviation(self, xy_train: pd.DataFrame, xy_ideal: pd.DataFrame) -> float:
         """
-        Calculate the maximum point-wise Euclidean deviation between training data and ideal function.
+        Calculate the maximum Y deviation between training data and ideal function
+        at matching X values.
 
-        :param xy_train: Array of (x, y) coordinates of the training data
-        :param xy_ideal: Array of (x, y) coordinates of the ideal function
-        :return: Maximum deviation
+        :param xy_train: DataFrame with (x, y) coordinates of the training data
+        :param xy_ideal: DataFrame with (x, y) coordinates of the ideal function
+        :return: Maximum absolute Y deviation
         """
-        # Ensure the input arrays are 2D
-        xy_train = np.atleast_2d(xy_train)
-        xy_ideal = np.atleast_2d(xy_ideal)
+        # Ensure x-values match
+        if not np.allclose(xy_train.iloc[:, 0], xy_ideal.iloc[:, 0], atol=1e-6):
+            raise ValueError("X values in training and ideal functions do not match.")
 
-        # Calculate pairwise distances between all points
-        distances = cdist(xy_train, xy_ideal)
+        # Compute absolute differences in y-values
+        y_diff = np.abs(xy_train.iloc[:, 1] - xy_ideal.iloc[:, 1])
 
-        # For each training point, find the minimum distance to any ideal point
-        min_distances = np.min(distances, axis=1)
+        # Return the maximum deviation
+        return y_diff.max()
 
-        # Return the maximum of these minimum distances
-        return np.max(min_distances)
-
-    def validate_deviation(self, x_value, y_value, xy_func: pd.DataFrame, max_deviation):
+    def validate_deviation(self, x_value, y_value, 
+                           xy_func: pd.DataFrame, max_deviation):
         """
-        Validate if the (x,y) coordiate fit into the max_diviation of the xy_func
+        Validate if the (x,y) coordinate fits within the maximum deviation 
+        from the ideal function at the given x position.
 
         :param x_value: x value of coordinate
         :param y_value: y value of coordinate
-        :param xy_func: function to validate with
-        :param max_deviation: maximum deviation to function
-        :return: If validatet the deviation of the coordinate, otherwise None
+        :param xy_func: ideal function to validate against
+        :param max_deviation: maximum allowed deviation
+        :return: deviation if validated, otherwise None
         """
-        # Find the closest point on the curve
-        distances = np.sqrt((xy_func.iloc[:, 0] - x_value)**2 + (xy_func.iloc[:, 1] - y_value)**2)
-        closest_index = distances.idxmin()
+        # Try to find the exact matching x_value in the ideal function
+        match = xy_func.loc[np.isclose(xy_func.iloc[:, 0], x_value, atol=1e-6)]
 
-        x_value_func = xy_func.iloc[closest_index, 0]
-        y_value_func = xy_func.iloc[closest_index, 1]
+        if match.empty:
+            # No matching x found (should normally not happen if x-values match)
+            return None
 
-        # Calculate the Euclidean distance
-        deviation = np.sqrt((x_value - x_value_func)**2 + (y_value - y_value_func)**2)
+        # Get corresponding y from ideal function
+        y_value_func = match.iloc[0, 1]
 
-        # Check if deviation doesn't exceed max_deviation
-        if deviation <= max_deviation :
+        # Calculate vertical deviation (only y-axis, since x is matched)
+        deviation = np.abs(y_value - y_value_func)
+
+        if deviation <= max_deviation:
             return deviation
 
-        # Coordinate could not be validated
+        # Deviation too large
         return None
 
 
-    def find_best_function_test(self, x_value, y_value, dataFrame_ideal:pd.DataFrame, pd_func_max_div:pd.DataFrame):
+    def find_best_function_test(self, x_value, y_value, 
+                                dataFrame_ideal:pd.DataFrame, 
+                                pd_func_max_div:pd.DataFrame):
         """
-        Validate if the (x,y) coordiate fit into the max_diviation of the xy_func
+        Validate if the (x,y) coordiate fit into the max_diviation 
+        of the xy_func
 
         :param x_value: x value of coordinate
         :param y_value: y value of coordinate
@@ -92,6 +100,9 @@ class LogicManager:
         :param pd_func_max_div: array with (choosen function, max deviation)
         :return: returns best deviation and the best fitting function
         """
+        if(x_value == -20):
+            i = 5
+
         best_deviation = None
         best_function = None
 
@@ -100,7 +111,8 @@ class LogicManager:
             func_id = row['func_id']
             max_div = row['max_div']
 
-            deviation = self.validate_deviation(x_value, y_value, dataFrame_ideal.iloc[:, [0, func_id]], max_div)
+            deviation = self.validate_deviation(x_value, y_value, 
+                        dataFrame_ideal.iloc[:, [0, func_id]], max_div)
 
             # Check if the result is the better option
             if deviation != None:
@@ -110,4 +122,3 @@ class LogicManager:
 
         # Return solution
         return best_deviation, best_function
-
