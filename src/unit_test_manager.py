@@ -7,9 +7,11 @@ from src.base_manager import BaseManager
 
 class UnitTestManager(BaseManager):
 
-    def __init__(self):
-        """Initialize the result array and the database path 
-        of the UnitTestManager class."""
+    def __init__(self) -> None:
+        """
+        Initialize the result array and the 
+        database path of the UnitTestManager class.
+        """
         # Initialize the parent class.
         super().__init__()
 
@@ -19,8 +21,10 @@ class UnitTestManager(BaseManager):
         # Change the status to "INITIALIZED".
         self.set_status("INITIALIZED")
         
-    def _cleanup_database(self):
-        """Remove any existing test database files."""
+    def _cleanup_database(self) -> None:
+        """
+        Remove any existing test database files.
+        """
         try:
             # Check if a unit test database exists.
             if os.path.exists(self.unit_test_db_path):
@@ -32,10 +36,16 @@ class UnitTestManager(BaseManager):
             # Log the exception.
             self.log(f"Could not clean up test database: {str(e)}")
         
-    def perform_unit_tests(self):
-        """Execute all unit tests and return results."""
+    def perform_unit_tests(self) -> bool:
+        """
+        Execute all unit tests and return results.
+        
+        :return: True if all tests PASSED or False
+         if at least one test FAILED.
+        """
         # Change the status to "RUNNING".
         self.set_status("RUNNING")
+        self.log("---Start Unit Tests---")
 
         # Perform all unit tests.
         self._test_get_best_fit_function()
@@ -55,24 +65,30 @@ class UnitTestManager(BaseManager):
             
             return True
 
-
-    def print_results(self):
+    def print_results(self) -> None:
+        """
+        Prints all results to the consol.
+        """
         # Print the results.
-        self.log("\n---Unit Test Results---")
+        self.log("---Unit Test Results---")
         for name, passed in self.test_results:
             status = "✓ - PASS" if passed else "✗ - FAIL"
             self.log(f"{status}: {name}")
 
+    def _record_test(self, test_name, condition) -> None:
+        """
+        Helper to store test results.
 
-        
-
-    def _record_test(self, test_name, condition):
-        """Helper to store test results."""
+        :param test_name: Name of the test.
+        :param condition: Result if the test PASSED or FAILED
+        """
+        # Save a new test result.
         self.test_results.append((test_name, bool(condition)))
-        return condition
 
-    def _test_get_best_fit_function(self):
-        """Test ideal function selection logic."""
+    def _test_get_best_fit_function(self) -> None:
+        """
+        Test ideal function selection logic.
+        """
         # Create a LogicManager.
         lgc_manager = lgc_mgr.LogicManager()
         
@@ -102,8 +118,10 @@ class UnitTestManager(BaseManager):
             except (ValueError, IndexError):
                 self._record_test(f"Error Handling: {name}", True)
 
-    def _test_calculate_max_deviation(self):
-        """Test maximum deviation calculation."""
+    def _test_calculate_max_deviation(self) -> None:
+        """
+        Test maximum deviation calculation.
+        """
         # Create a LogicManager.
         lgc_manager = lgc_mgr.LogicManager()
         
@@ -119,8 +137,10 @@ class UnitTestManager(BaseManager):
         max_dev = lgc_manager.calculate_max_deviation(train, ideal)
         self._record_test("Max Deviation Calculation", max_dev == 2)
 
-    def _test_validate_deviation(self):
-        """Test point validation logic."""
+    def _test_validate_deviation(self) -> None:
+        """
+        Test point validation logic.
+        """
         # Create a LogicManager.
         lgc_manager = lgc_mgr.LogicManager()
         func_data = pd.DataFrame({'X': [-20, 0, 20], 'Y1': [-20, 0, 20]})
@@ -137,9 +157,14 @@ class UnitTestManager(BaseManager):
         valid = lgc_manager.validate_deviation(0, 1.01, func_data, 1.0)
         self._record_test("Excess Deviation", valid is None)
 
-    def _test_database_operations(self):
-        """Test database CRUD operations."""
+    def _test_database_operations(self) -> None:
+        """
+        Test database CRUD operations.
+        """
+        # Create a DatabaseManager.
         db_manager = sql_mgr.DatabaseManager(self.unit_test_db_path)
+        
+        # Test create a Database.
         success = db_manager.createDatabase()
         self._record_test("Database Creation", success)
         

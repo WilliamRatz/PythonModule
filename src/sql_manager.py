@@ -1,33 +1,34 @@
 import sqlalchemy as db
 import pandas as pd
+from typing import Optional
 from src.base_manager import BaseManager 
 
 class DatabaseManager(BaseManager):
 
-    def __init__(self, db_path):
-        '''
+    def __init__(self, db_path) -> None:
+        """
         Creats/Loads database engine.
 
         :param db_path: path to the database
-        '''
+        """
         # Initialize parent class.
         super().__init__()
         # Create engine so it can be used in the whole class.
         self.db_engine = db.create_engine(f'sqlite:///{db_path}')
 
-    def __del__(self):
-        '''Close all open connections to the database.'''
+    def __del__(self) -> None:
+        """Close all open connections to the database."""
         self.db_engine.dispose()
         # Change the status to "DISCONNECTED".
         self.set_status("DISCONNECTED")
 
-    def load_table(self, table_name):
-        '''
+    def load_table(self, table_name) -> Optional[pd.DataFrame]:
+        """
         Loads table into a pandas data frame.
 
         :param table_name: name of the table to load
         :return: panda data frame of table
-        '''
+        """
 
         table = db.Table(table_name, 
                          db.MetaData(), 
@@ -47,22 +48,22 @@ class DatabaseManager(BaseManager):
 
             return df
 
-    def csv_2DArray(self, directory):
-        '''
+    def csv_2DArray(self, directory) -> pd.DataFrame:
+        """
         Read csv file into a pandas data frame.
 
         :param directory: directory of csv file
         :return: panda data frame of csv file
-        '''
+        """
         return pd.read_csv(directory)
 
-    def import_trainCSV(self, directory):
-        '''
+    def import_trainCSV(self, directory) -> int:
+        """
         Import the train data from the train.csv into the database.
         
         :param directory: directory of csv file
         :return: size of successfull added records
-        '''
+        """
         counter = 0
         train_df = self.csv_2DArray(directory)
         for ind in train_df.index:
@@ -76,13 +77,13 @@ class DatabaseManager(BaseManager):
         # Return the amount of records that has been added.
         return counter
 
-    def import_idealCSV(self, directory):
-        '''
+    def import_idealCSV(self, directory) -> int:
+        """
         Import the ideal data from the ideal.csv into the database.
 
         :param directory: directory of csv file
         :return: size of successfull added records
-        '''
+        """
         counter = 0
         ideal_df = self.csv_2DArray(directory)
         for ind in ideal_df.index:
@@ -95,8 +96,8 @@ class DatabaseManager(BaseManager):
         # Return the amount of records that has been added.
         return counter
 
-    def trainDB_add_record(self, x, y1, y2, y3, y4):
-        '''
+    def trainDB_add_record(self, x, y1, y2, y3, y4) -> bool:
+        """
         Add a record to the train table in the database.
 
         :param x: X value
@@ -104,9 +105,8 @@ class DatabaseManager(BaseManager):
         :param y2: Y2 (training func) value
         :param y3: Y3 (training func) value
         :param y4: Y4 (training func) value
-        :param directory: directory of csv file
-        :return: BOOL if successfull
-        '''
+        :return: True if successful or skipped due to duplicate PK
+        """
         connection = self.db_engine.connect()
         try:
             # Creation SQL statement with placeholder.
@@ -149,15 +149,14 @@ class DatabaseManager(BaseManager):
             # Close the connection.
             connection.close()
    
-    def idealDB_add_record(self, x, y_values):
-        '''
+    def idealDB_add_record(self, x, y_values) -> bool:
+        """
         Add a record to the train table in the database.
 
         :param x: X value
         :param y_values: array containing all y indexes from 1 to 50
-        :param directory: directory of csv file
-        :return: BOOL if successfull
-        '''
+        :return: True if successful or skipped due to duplicate PK
+        """
         connection = self.db_engine.connect()
         try:
             # Create a column name string for the SQL statement.
@@ -198,16 +197,16 @@ class DatabaseManager(BaseManager):
             # Close the connections.
             connection.close()
 
-    def testDB_add_record(self, x_test, y_test, delta_y_test, no_ideal_func):
-        '''
+    def testDB_add_record(self, x_test, y_test, delta_y_test, no_ideal_func) -> bool:
+        """
         Add a record to the test table in the database.
 
         :param x_test: X value
         :param y_test: Y (test func) value
         :param delta_y_test: Delta Y (test func) value
         :param no_ideal_func: No. of ideal func value
-        :return: BOOL if successful or skipped due to duplicate PK
-        '''
+        :return: True if successful or skipped due to duplicate PK
+        """
         connection = self.db_engine.connect()
         try:
             # Creation of SQL statement with a placeholder.
@@ -248,13 +247,13 @@ class DatabaseManager(BaseManager):
             # Close the connections.
             connection.close()
     
-    def createDatabase(self):
-        '''
+    def createDatabase(self) -> bool:
+        """
         Creates all needed database tabels at the 
         choosen direction, if not already exist.
 
-        :return: true if successfull
-        '''
+        :return: True if successfull
+        """
         # Get the connection object.
         connection = self.db_engine.connect()
 

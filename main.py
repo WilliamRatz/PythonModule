@@ -55,7 +55,7 @@ def main():
     ideal_for_y1 = lgc_manager.get_best_fit_function(
         dataFrame_train.iloc[:,[0,1]], 
         dataFrame_ideal)
-    max_diviation_y1 = lgc_manager.calculate_max_deviation(
+    max_deviation_y1 = lgc_manager.calculate_max_deviation(
         dataFrame_train.iloc[:, [0,1]], 
         dataFrame_ideal.iloc[:, [0,ideal_for_y1]])
 
@@ -63,7 +63,7 @@ def main():
     ideal_for_y2 = lgc_manager.get_best_fit_function(
         dataFrame_train.iloc[:,[0,2]], 
         dataFrame_ideal)
-    max_diviation_y2 = lgc_manager.calculate_max_deviation(
+    max_deviation_y2 = lgc_manager.calculate_max_deviation(
         dataFrame_train.iloc[:, [0,2]], 
         dataFrame_ideal.iloc[:, [0, ideal_for_y2]])
 
@@ -71,7 +71,7 @@ def main():
     ideal_for_y3 = lgc_manager.get_best_fit_function(
         dataFrame_train.iloc[:,[0,3]], 
         dataFrame_ideal)
-    max_diviation_y3 = lgc_manager.calculate_max_deviation(
+    max_deviation_y3 = lgc_manager.calculate_max_deviation(
         dataFrame_train.iloc[:, [0,3]], 
         dataFrame_ideal.iloc[:, [0, ideal_for_y3]])
 
@@ -79,18 +79,24 @@ def main():
     ideal_for_y4 = lgc_manager.get_best_fit_function(
         dataFrame_train.iloc[:,[0,4]], 
         dataFrame_ideal)
-    max_diviation_y4 = lgc_manager.calculate_max_deviation(
+    max_deviation_y4 = lgc_manager.calculate_max_deviation(
         dataFrame_train.iloc[:, [0,4]], 
         dataFrame_ideal.iloc[:, [0, ideal_for_y4]])
 
     # Convert to usabel pandas data frame.
     # "* np.sqrt(2)" for the max diviation of the test data.
     pd_func_max_div = pd.DataFrame([
-        [ideal_for_y1, max_diviation_y1 * np.sqrt(2)],
-        [ideal_for_y2, max_diviation_y2 * np.sqrt(2)], 
-        [ideal_for_y3, max_diviation_y3 * np.sqrt(2)],
-        [ideal_for_y4, max_diviation_y4 * np.sqrt(2)]],
+        [ideal_for_y1, max_deviation_y1 * np.sqrt(2)],
+        [ideal_for_y2, max_deviation_y2 * np.sqrt(2)], 
+        [ideal_for_y3, max_deviation_y3 * np.sqrt(2)],
+        [ideal_for_y4, max_deviation_y4 * np.sqrt(2)]],
         columns=['func_id', 'max_div'])
+    
+    # Sort DataFrame by function id for later legend ordering.
+    pd_func_max_div = pd_func_max_div.sort_values(by='func_id')
+
+    # Resetting index after sorting.
+    pd_func_max_div = pd_func_max_div.reset_index(drop=True)
 
     for index, row in csv_test.iterrows():
         x_value = csv_test.iloc[index, 0] 
@@ -110,16 +116,16 @@ def main():
     dataFrame_test = db_manager.load_table("test_db")
 
     # Colors for each of the four functions.
-    function_colors = ['#f56fa1', 
-                       '#f0de89',
+    func_colors = ['#f56fa1', 
+                       '#f0cf37',
                        '#90d2d8',
                        '#63bc46']
 
     # Create the VisualManager.
-    v_manager = v_mgr.VisualManger(
+    v_manager = v_mgr.VisualManager(
         dataFrame_train, dataFrame_ideal, dataFrame_test)
     # Start visualisation procedure.
-    v_manager.visualize_data_and_deviations(pd_func_max_div , function_colors)
+    v_manager.visualize_data_and_deviations(pd_func_max_div , func_colors)
 
 if __name__ == "__main__":
     # Setting up that this file will be started first with its main

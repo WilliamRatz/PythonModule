@@ -1,10 +1,14 @@
 import pandas as pd
 import numpy as np
+from typing import Tuple, Optional
 from src.base_manager import BaseManager 
 
 class LogicManager(BaseManager):
 
     def __init__(self) -> None:
+        """
+        Initialization of the LogicManager.
+        """
         # Initialize the parent class.
         super().__init__()
 
@@ -12,7 +16,7 @@ class LogicManager(BaseManager):
         self.set_status("INITIALIZED")
 
     def get_best_fit_function(self, xy_train_func:pd.DataFrame, 
-                              xy_all_ideal_func:pd.DataFrame):
+                              xy_all_ideal_func:pd.DataFrame) -> int:
         '''
         Find the best fitting ideal function for a train function.
 
@@ -89,7 +93,7 @@ class LogicManager(BaseManager):
         return y_diff.max()
 
     def validate_deviation(self, x_value, y_value, 
-                           xy_func: pd.DataFrame, max_deviation):
+                           xy_func: pd.DataFrame, max_deviation) -> Optional[float]:
         """
         Validate if the (x,y) coordinate fits within the maximum deviation 
         from the ideal function at the given x position.
@@ -121,9 +125,10 @@ class LogicManager(BaseManager):
 
     def find_best_function_test(self, x_value, y_value, 
                                 dataFrame_ideal:pd.DataFrame, 
-                                pd_func_max_div:pd.DataFrame):
+                                pd_func_max_div:pd.DataFrame
+                                ) -> Tuple[Optional[float], Optional[int]]:
         """
-        Validate if the (x,y) coordiate fit into the max_diviation 
+        Validate if the (x,y) coordiate fit into the max_deviation 
         of the xy_func.
 
         :param x_value: x value of coordinate
@@ -132,8 +137,6 @@ class LogicManager(BaseManager):
         :param pd_func_max_div: array with (choosen function, max deviation)
         :return: returns best deviation and the best fitting function
         """
-        if(x_value == -20):
-            i = 5
 
         best_deviation = None
         best_function = None
