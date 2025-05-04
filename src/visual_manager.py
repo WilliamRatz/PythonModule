@@ -4,7 +4,6 @@ import pandas as pd
 from bokeh.plotting import figure, show
 from bokeh.models import ColumnDataSource, GlyphRenderer, HoverTool, Legend, LegendItem
 from bokeh.colors import RGB
-from bokeh.io.export import export_svgs
 
 from src.base_manager import BaseManager 
 
